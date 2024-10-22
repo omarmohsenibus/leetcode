@@ -22,50 +22,55 @@ int *two_sum_bruteforce(int *nums, int numsSize, int target, int *returnSize)
     return NULL;
 }
 
-int compare_element(const void *a, const void *b)
-{
-    struct Element *first = (struct Element *)a;
-    struct Element *second = (struct Element *)b;
+#ifdef __APPLE__
+// For macOS
+#define QSORT_R(base, nmemb, size, compar, arg) \
+    qsort_r(base, nmemb, size, arg, compar)
+#else
+// For Linux/BSD
+#define QSORT_R(base, nmemb, size, compar, arg) \
+    qsort_r(base, nmemb, size, compar, arg)
+#endif
 
-    return first->value - second->value;
+int compare_index(const void *a, const void *b, void *nums)
+{
+    return ((int *)nums)[(*(const int *)a)] - ((int *)nums)[(*(const int *)b)];
 }
 
 int *two_sum_2_pointers(int *nums, int numsSize, int target, int *returnSize)
 {
-    unsigned short left = 0;
-    unsigned short right = numsSize - 1;
-    unsigned short sum = 0;
+    int left = 0;
+    int right = numsSize - 1;
 
-    struct Element *elements = malloc(numsSize * sizeof(struct Element));
-
-    if (elements == NULL)
+    int *res = malloc(2 * sizeof(int));
+    if (res == NULL)
         return NULL;
+
+    int *indices = malloc(numsSize * sizeof(int));
+    if (indices == NULL)
+    {
+        free(res);
+        return NULL;
+    }
 
     for (int i = 0; i < numsSize; i++)
     {
-        elements[i].value = nums[i];
-        elements[i].index = i;
+        indices[i] = i;
     }
-    qsort(elements, numsSize, sizeof(struct Element), compare_element);
+
+    qsort_r(indices, numsSize, sizeof(int), compare_index, nums);
 
     while (left < right)
     {
-        sum = elements[left].value + elements[right].value;
-        if (sum == target)
+        if (nums[indices[left]] + nums[indices[right]] == target)
         {
             *returnSize = 2;
-            int *res = malloc(*returnSize * sizeof(unsigned short));
-            if(res == NULL) {
-                free(elements);
-                return NULL;
-            }
-                
-            res[0] = elements[left].index;
-            res[1] = elements[right].index;
-            free(elements);
+            res[0] = indices[left];
+            res[1] = indices[right];
+            free(indices);
             return res;
         }
-        else if (sum < target)
+        else if (nums[indices[left]] + nums[indices[right]] < target)
         {
             left += 1;
         }
@@ -75,7 +80,8 @@ int *two_sum_2_pointers(int *nums, int numsSize, int target, int *returnSize)
         }
     }
 
-    free(elements);
+    free(res);
+    free(indices);
 
     return NULL;
 }
